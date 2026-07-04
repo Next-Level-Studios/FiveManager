@@ -1,4 +1,4 @@
-# updatefivem
+# UpdateFivem
 
 > A polished terminal updater for FiveM Linux server artifacts, with system-wide config and a tmux-backed systemd service.
 
