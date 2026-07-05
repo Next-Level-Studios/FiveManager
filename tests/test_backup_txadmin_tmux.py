@@ -40,6 +40,7 @@ def test_txadmin_config_generation_and_profile_creation(tmp_path):
     assert cfg["server"]["cfgPath"] == server["cfg_path"]
 
     profile = write_txadmin_profile(tmp_path / "runtime", server)
+    assert profile == tmp_path / "runtime" / "txData" / "main-rp" / "default"
     assert (profile / "data").is_dir()
     assert (profile / "logs").is_dir()
     written = json.loads((profile / "config.json").read_text())
@@ -70,10 +71,8 @@ def test_start_server_builds_expected_tmux_command(monkeypatch, tmp_path):
     cmd = calls[0]
     joined = " ".join(cmd)
     assert "TXHOST_DATA_PATH" in joined
-    assert str(runtime / "txData") in joined
-    assert str(runtime / "txData" / "main") not in joined
+    assert str(runtime / "txData" / "main") in joined
     assert "TXHOST_TXA_PORT" in joined
     assert str(runtime / "run.sh") in joined
-    assert "+set serverProfile" in joined
     assert "main" in joined
     assert "server.cfg" in joined

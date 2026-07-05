@@ -31,7 +31,7 @@ def build_txadmin_config(server: dict[str, Any], template: dict[str, Any] | None
 
 
 def write_txadmin_profile(runtime_dir: Path, server: dict[str, Any], template: dict[str, Any] | None = None) -> Path:
-    profile = runtime_dir / "txData" / server["key"]
+    profile = runtime_dir / "txData" / server["key"] / "default"
     (profile / "data").mkdir(parents=True, exist_ok=True)
     (profile / "logs").mkdir(parents=True, exist_ok=True)
     config_path = profile / "config.json"

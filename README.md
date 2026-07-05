@@ -61,9 +61,9 @@ Use this if you want FiveManager to manage one or more FiveM servers from one sh
 Each server gets:
 
 ```text
-<runtime>/txData/<server-key>/config.json
-<runtime>/txData/<server-key>/data/
-<runtime>/txData/<server-key>/logs/
+<runtime>/txData/<server-key>/default/config.json
+<runtime>/txData/<server-key>/default/data/
+<runtime>/txData/<server-key>/default/logs/
 ```
 
 Servers are started in named tmux sessions, not systemd services.
@@ -247,17 +247,13 @@ FiveManager generates each server’s txAdmin config from the template shape pro
 At runtime, FiveManager starts each tmux session with:
 
 ```bash
-TXHOST_DATA_PATH=<runtime>/txData
+TXHOST_DATA_PATH=<runtime>/txData/<server-key>
 TXHOST_TXA_PORT=<txadmin-port>
 TXHOST_FXS_PORT=<fxserver-port>
 TXHOST_INTERFACE=<interface>
 ```
 
-and passes the server profile explicitly:
-
-```bash
-+set serverProfile <server-key>
-```
+txAdmin then uses its default profile under that server-specific `TXHOST_DATA_PATH`. This avoids the deprecated `serverProfile` ConVar warning.
 
 Then it runs:
 
