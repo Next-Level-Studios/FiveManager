@@ -21,12 +21,19 @@ def _validate_tar_member(root: Path, member: tarfile.TarInfo) -> None:
         raise RuntimeError(f"Refusing to extract unsupported tar member: {member.name}")
     if member.issym() or member.islnk():
         # Tar links are resolved relative to the link's containing directory.
-        # Reject absolute or escaping targets before extraction so an archive
-        # cannot plant links pointing outside the temporary work directory.
+        # FiveM artifacts contain absolute symlinks used inside their proot
+        # layout, so allow absolute symlinks. Hardlinks are different: tar may
+        # materialise them during extraction, so reject absolute hardlink targets
+        # and reject any relative link target that escapes the extraction root.
         link_target = Path(member.linkname)
-        if link_target.is_absolute():
+        if member.islnk() and link_target.is_absolute():
             raise RuntimeError(f"Refusing to extract unsafe tar link: {member.name} -> {member.linkname}")
-        _safe_member_path((root / member.name).parent, member.linkname)
+        if not link_target.is_absolute():
+            _safe_member_path((root / member.name).parent, member.linkname)
+
+
+def _trusted_after_validation(member: tarfile.TarInfo, _destination: str) -> tarfile.TarInfo:
+    return member
 
 
 def extract_artifact(archive_path: Path, work_dir: Path) -> Path:
@@ -35,7 +42,7 @@ def extract_artifact(archive_path: Path, work_dir: Path) -> Path:
     with tarfile.open(archive_path, "r:xz") as tar:
         for member in tar.getmembers():
             _validate_tar_member(extract_root, member)
-        tar.extractall(extract_root, filter="data")
+        tar.extractall(extract_root, filter=_trusted_after_validation)
     for root, dirs, _files in os.walk(extract_root):
         root_path = Path(root)
         if not root_path.is_symlink():

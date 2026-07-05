@@ -83,6 +83,30 @@ def test_extract_rejects_symlink_escaping_extract_root(tmp_path):
         extract_artifact(archive, tmp_path / "work")
 
 
+def test_extract_allows_absolute_symlink_used_by_fivem_artifact(tmp_path):
+    archive = tmp_path / "fx-absolute-link.tar.xz"
+    with tarfile.open(archive, "w:xz") as tar:
+        alpine = tarfile.TarInfo("alpine/")
+        alpine.type = tarfile.DIRTYPE
+        tar.addfile(alpine)
+
+        link = tarfile.TarInfo("alpine/lib/ld-linux-x86-64.so.2")
+        link.type = tarfile.SYMTYPE
+        link.linkname = "/usr/glibc-compat/lib/ld-linux-x86-64.so.2"
+        tar.addfile(link)
+
+        run = tarfile.TarInfo("run.sh")
+        data = b"#!/bin/sh\n"
+        run.size = len(data)
+        tar.addfile(run, io.BytesIO(data))
+
+    extracted = extract_artifact(archive, tmp_path / "work")
+
+    link_path = extracted / "alpine/lib/ld-linux-x86-64.so.2"
+    assert link_path.is_symlink()
+    assert os.readlink(link_path) == "/usr/glibc-compat/lib/ld-linux-x86-64.so.2"
+
+
 def test_extract_rejects_special_tar_members(tmp_path):
     archive = tmp_path / "evil-special.tar.xz"
     with tarfile.open(archive, "w:xz") as tar:
