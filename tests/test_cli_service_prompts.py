@@ -50,6 +50,7 @@ def test_prepare_service_for_update_can_be_skipped(monkeypatch):
 
 def test_offer_start_after_update_asks_even_if_service_was_not_stopped(monkeypatch):
     calls = []
+    monkeypatch.setattr(cli, "_service_unit_exists", lambda service_name: True)
     monkeypatch.setattr(cli.Confirm, "ask", lambda *args, **kwargs: True)
     monkeypatch.setattr(cli, "_run_service_action", lambda action, service_name: calls.append((action, service_name)))
 
@@ -66,6 +67,7 @@ def test_offer_start_after_update_asks_even_if_service_was_not_stopped(monkeypat
 def test_offer_start_after_update_run_option_starts_without_prompt(monkeypatch):
     calls = []
     prompts = []
+    monkeypatch.setattr(cli, "_service_unit_exists", lambda service_name: True)
     monkeypatch.setattr(cli.Confirm, "ask", lambda *args, **kwargs: prompts.append(args) or False)
     monkeypatch.setattr(cli, "_run_service_action", lambda action, service_name: calls.append((action, service_name)))
 
@@ -83,6 +85,7 @@ def test_offer_start_after_update_run_option_starts_without_prompt(monkeypatch):
 def test_offer_start_after_update_prints_command_when_declined(monkeypatch):
     calls = []
     messages = []
+    monkeypatch.setattr(cli, "_service_unit_exists", lambda service_name: True)
     monkeypatch.setattr(cli.Confirm, "ask", lambda *args, **kwargs: False)
     monkeypatch.setattr(cli, "_run_service_action", lambda action, service_name: calls.append((action, service_name)))
     monkeypatch.setattr(cli.console, "print", lambda message: messages.append(str(message)))
@@ -97,6 +100,28 @@ def test_offer_start_after_update_prints_command_when_declined(monkeypatch):
     assert calls == []
     assert any("updatefivem start" in message for message in messages)
     assert any("systemctl start fivem-dev" in message for message in messages)
+
+
+def test_offer_start_after_update_skips_prompt_when_service_unit_missing(monkeypatch):
+    calls = []
+    prompts = []
+    messages = []
+    monkeypatch.setattr(cli, "_service_unit_exists", lambda service_name: False)
+    monkeypatch.setattr(cli.Confirm, "ask", lambda *args, **kwargs: prompts.append(args) or True)
+    monkeypatch.setattr(cli, "_run_service_action", lambda action, service_name: calls.append((action, service_name)))
+    monkeypatch.setattr(cli.console, "print", lambda message: messages.append(str(message)))
+
+    cli._offer_start_after_update(
+        {"service_name": "fivem-dev"},
+        assume_yes=False,
+        service_control=True,
+        run_after_update=True,
+    )
+
+    assert calls == []
+    assert prompts == []
+    assert any("No systemd service named 'fivem-dev' is installed" in message for message in messages)
+    assert any("sudo updatefivem service install" in message for message in messages)
 
 
 def test_offer_start_after_update_does_nothing_when_service_control_disabled(monkeypatch):

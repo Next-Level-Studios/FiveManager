@@ -77,6 +77,12 @@ def service_is_active(service_name: str) -> bool:
     return result.returncode == 0
 
 
+def service_unit_exists(service_name: str) -> bool:
+    validate_service_name(service_name)
+    result = subprocess.run(["systemctl", "cat", service_name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    return result.returncode == 0
+
+
 def tmux_session_exists(service_name: str) -> bool:
     validate_service_name(service_name)
     result = subprocess.run(["tmux", "has-session", "-t", service_name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

@@ -11,7 +11,7 @@ from .artifacts import ARTIFACT_PAGE_URL, download_artifact, fetch_artifact_page
 from .config import default_run_user, load_config, merge_config, resolve_server_cfg, save_config, validate_config
 from .installer import install_archive
 from .paths import cache_dir
-from .service import install_service, service_is_active, systemctl_args, tmux_session_exists, validate_service_name
+from .service import install_service, service_is_active, service_unit_exists, systemctl_args, tmux_session_exists, validate_service_name
 from .ui import console, error, info, success, warn
 from .updater import run_self_update
 
@@ -119,6 +119,10 @@ def _service_is_active(service_name: str) -> bool:
     return service_is_active(service_name)
 
 
+def _service_unit_exists(service_name: str) -> bool:
+    return service_unit_exists(service_name)
+
+
 def _prepare_service_for_update(config: dict, *, assume_yes: bool, service_control: bool) -> bool:
     if not service_control:
         return False
@@ -143,6 +147,11 @@ def _offer_start_after_update(config: dict, *, assume_yes: bool, service_control
     if not service_control:
         return
     service_name = config.get("service_name", "fivem")
+    if not _service_unit_exists(service_name):
+        console.print(f"No systemd service named '{service_name}' is installed yet.")
+        console.print("Install the tmux-backed service with: sudo updatefivem service install")
+        console.print(f"Then start it with: updatefivem start")
+        return
     should_start = run_after_update or assume_yes or Confirm.ask(
         f"Update complete. Would you like to start the FiveM service '{service_name}' now?",
         default=True,

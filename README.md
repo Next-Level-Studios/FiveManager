@@ -89,10 +89,10 @@ Download the latest wheel from the releases page:
 
 https://github.com/Next-Level-Studios/fivem-updater/releases
 
-Example using `v0.1.7`:
+Example using `v0.1.8`:
 
 ```bash
-wget https://github.com/Next-Level-Studios/fivem-updater/releases/download/v0.1.7/updatefivem-0.1.7-py3-none-any.whl
+wget https://github.com/Next-Level-Studios/fivem-updater/releases/download/v0.1.8/updatefivem-0.1.8-py3-none-any.whl
 ```
 
 Recommended system venv install:
@@ -100,7 +100,7 @@ Recommended system venv install:
 ```bash
 sudo mkdir -p /opt/updatefivem
 sudo python3 -m venv /opt/updatefivem/venv
-sudo /opt/updatefivem/venv/bin/pip install ./updatefivem-0.1.7-py3-none-any.whl
+sudo /opt/updatefivem/venv/bin/pip install ./updatefivem-0.1.8-py3-none-any.whl
 sudo ln -sf /opt/updatefivem/venv/bin/updatefivem /usr/local/bin/updatefivem
 ```
 
@@ -239,6 +239,12 @@ To start the server automatically after updating:
 
 ```bash
 updatefivem --run
+```
+
+If the tmux-backed systemd service has not been installed yet, `updatefivem` will not try to start a missing unit. Install it first:
+
+```bash
+sudo updatefivem service install
 ```
 
 If you decline the start prompt, `updatefivem` prints the command you can run later:
