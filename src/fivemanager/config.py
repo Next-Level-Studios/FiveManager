@@ -10,6 +10,7 @@ from .paths import config_path
 
 Mode = Literal["runtime", "manager"]
 SLUG_RE = re.compile(r"[^a-z0-9_-]+")
+SAFE_KEY_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
 
 
 def slugify(value: str) -> str:
@@ -116,6 +117,8 @@ def get_server(config: dict[str, Any], server_id: int) -> dict[str, Any]:
 
 
 def add_server(config: dict[str, Any], *, name: str, key: str, data_path: str, cfg_path: str, txadmin_port: int, fxserver_port: int, interface: str) -> dict[str, Any]:
+    if not SAFE_KEY_RE.match(key):
+        raise RuntimeError("internal server key may only contain letters, numbers, dot, underscore, and dash")
     conflicts = port_conflicts(config, txadmin_port, fxserver_port)
     if conflicts:
         raise RuntimeError("; ".join(conflicts))

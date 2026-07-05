@@ -20,6 +20,13 @@ def test_slugify_server_names():
     assert slugify("  DEV_01!! ") == "dev_01"
 
 
+def test_add_server_rejects_unsafe_internal_key():
+    cfg = default_config()
+    cfg["runtime_dir"] = "/runtime"
+    with pytest.raises(RuntimeError, match="internal server key"):
+        add_server(cfg, name="Bad", key="bad;rm -rf", data_path="/srv/bad", cfg_path="/srv/bad/server.cfg", txadmin_port=40120, fxserver_port=30120, interface="0.0.0.0")
+
+
 def test_stable_ids_reuse_lowest_free_id():
     cfg = default_config()
     cfg["runtime_dir"] = "/runtime"

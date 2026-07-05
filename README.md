@@ -247,10 +247,16 @@ FiveManager generates each server’s txAdmin config from the template shape pro
 At runtime, FiveManager starts each tmux session with:
 
 ```bash
-TXHOST_DATA_PATH=<runtime>/txData/<server-key>
+TXHOST_DATA_PATH=<runtime>/txData
 TXHOST_TXA_PORT=<txadmin-port>
 TXHOST_FXS_PORT=<fxserver-port>
 TXHOST_INTERFACE=<interface>
+```
+
+and passes the server profile explicitly:
+
+```bash
++set serverProfile <server-key>
 ```
 
 Then it runs:
