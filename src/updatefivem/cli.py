@@ -7,13 +7,14 @@ from pathlib import Path
 import typer
 from rich.prompt import Confirm, Prompt
 
+from . import __version__
 from .artifacts import ARTIFACT_PAGE_URL, download_artifact, fetch_artifact_page, parse_artifacts, resolve_artifact
 from .config import default_run_user, load_config, merge_config, resolve_server_cfg, save_config, validate_config
 from .installer import install_archive
 from .paths import cache_dir
 from .service import install_service, service_is_active, service_unit_exists, systemctl_args, tmux_session_exists, validate_service_name
 from .ui import console, error, info, success, warn
-from .updater import run_self_update
+from .updater import check_for_newer_release, fetch_latest_release, run_self_update
 
 app = typer.Typer(help="Update FiveM artifacts and manage the FiveM service.", no_args_is_help=False)
 service_app = typer.Typer(help="Install or inspect the tmux-backed systemd service.")
@@ -110,6 +111,26 @@ def _selected_artifact(artifact_value: str | None):
     return resolve_artifact(artifact_value, artifacts)
 
 
+def _latest_cli_update():
+    release = fetch_latest_release()
+    return check_for_newer_release(__version__, release)
+
+
+def _maybe_check_for_cli_update(*, enabled: bool) -> None:
+    if not enabled:
+        return
+    try:
+        update = _latest_cli_update()
+    except Exception:
+        # Advisory update checks should never block the actual FiveM update.
+        return
+    if not update:
+        return
+    console.print(f"[yellow]A newer updatefivem release is available:[/] {update.current_version} → {update.latest_version}")
+    console.print("Upgrade with: updatefivem self-update")
+    console.print(f"Release notes: {update.release_url}")
+
+
 def _run_service_action(action: str, service_name: str) -> None:
     args = systemctl_args(action, service_name)
     subprocess.run(args, check=True)
@@ -173,6 +194,7 @@ def main(
     server_cfg_dir: str | None = typer.Option(None, "--config-dir", help="Directory containing the server config. Can be relative to server dir or absolute."),
     server_cfg_file: str | None = typer.Option(None, "--config-file", help="Server config filename, e.g. production.cfg."),
     artifact: str | None = typer.Option(None, "--artifact", help="Explicit artifact build or .tar.xz URL."),
+    update_check: bool = typer.Option(True, "--update-check/--no-update-check", help="Check GitHub for a newer updatefivem release before running."),
     yes: bool = typer.Option(False, "--yes", "-y", help="Assume yes for stop/start prompts during update."),
     run_after_update: bool = typer.Option(False, "--run", help="Start the configured FiveM service after updating."),
     service_control: bool = typer.Option(True, "--service-control/--no-service-control", help="Stop the configured service before updating and offer to start it afterwards."),
@@ -180,6 +202,7 @@ def main(
     if ctx.invoked_subcommand is not None:
         return
     try:
+        _maybe_check_for_cli_update(enabled=update_check)
         selected = _selected_artifact(artifact)
         if check:
             console.print("[bold]Selected FiveM artifact:[/]")

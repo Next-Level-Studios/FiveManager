@@ -2,6 +2,7 @@ import pytest
 import typer
 
 from updatefivem import cli
+from updatefivem.updater import UpdateInfo
 
 
 def test_prepare_service_for_update_stops_after_confirmation(monkeypatch):
@@ -136,3 +137,35 @@ def test_offer_start_after_update_does_nothing_when_service_control_disabled(mon
     )
 
     assert calls == []
+
+
+def test_maybe_check_for_cli_update_prints_when_new_release_exists(monkeypatch):
+    messages = []
+    update = UpdateInfo(
+        current_version="0.1.8",
+        latest_version="v0.1.9",
+        release_url="https://example.test/release",
+        wheel_name="updatefivem-0.1.9-py3-none-any.whl",
+        wheel_url="https://example.test/updatefivem.whl",
+    )
+    monkeypatch.setattr(cli, "_latest_cli_update", lambda: update)
+    monkeypatch.setattr(cli.console, "print", lambda message: messages.append(str(message)))
+
+    cli._maybe_check_for_cli_update(enabled=True)
+
+    assert any("v0.1.9" in message for message in messages)
+    assert any("updatefivem self-update" in message for message in messages)
+
+
+def test_maybe_check_for_cli_update_can_be_disabled(monkeypatch):
+    called = False
+
+    def fake_update():
+        nonlocal called
+        called = True
+
+    monkeypatch.setattr(cli, "_latest_cli_update", fake_update)
+
+    cli._maybe_check_for_cli_update(enabled=False)
+
+    assert called is False

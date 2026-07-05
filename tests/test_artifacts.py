@@ -1,9 +1,6 @@
-import io
-
 import pytest
 
 from updatefivem.artifacts import Artifact, parse_artifacts, resolve_artifact, select_blue_recommended
-
 
 HTML = """
 <html><body>
@@ -15,7 +12,6 @@ HTML = """
 </table>
 </body></html>
 """
-
 
 def test_parse_selects_first_blue_table_row_not_top_button():
     artifacts = parse_artifacts(HTML, "https://runtime.fivem.net/artifacts/fivem/build_proot_linux/master/")
@@ -58,6 +54,11 @@ def test_resolve_artifact_by_url():
     artifact = resolve_artifact("https://example.test/123/fx.tar.xz", [])
     assert artifact.build == "123"
     assert artifact.url == "https://example.test/123/fx.tar.xz"
+
+
+def test_resolve_artifact_rejects_plain_http_url():
+    with pytest.raises(RuntimeError, match="HTTPS"):
+        resolve_artifact("http://example.test/123/fx.tar.xz", [])
 
 
 def test_resolve_artifact_by_build():

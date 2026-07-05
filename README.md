@@ -39,6 +39,7 @@ Created by AI, assisted by Next Level Studio.
 updatefivem                         # Download and install selected artifact
 updatefivem --check                 # Show selected artifact without installing
 updatefivem --artifact <build|url>  # Install a specific build or artifact URL
+updatefivem --no-update-check       # Skip checking for newer updatefivem releases
 updatefivem --server-dir /path      # Override/save server directory
 updatefivem --config /path.cfg      # Override/save config path passed to +exec
 updatefivem --config-dir /path      # Directory containing the server cfg
@@ -89,10 +90,10 @@ Download the latest wheel from the releases page:
 
 https://github.com/Next-Level-Studios/fivem-updater/releases
 
-Example using `v0.1.8`:
+Example using `v0.1.9`:
 
 ```bash
-wget https://github.com/Next-Level-Studios/fivem-updater/releases/download/v0.1.8/updatefivem-0.1.8-py3-none-any.whl
+wget https://github.com/Next-Level-Studios/fivem-updater/releases/download/v0.1.9/updatefivem-0.1.9-py3-none-any.whl
 ```
 
 Recommended system venv install:
@@ -100,7 +101,7 @@ Recommended system venv install:
 ```bash
 sudo mkdir -p /opt/updatefivem
 sudo python3 -m venv /opt/updatefivem/venv
-sudo /opt/updatefivem/venv/bin/pip install ./updatefivem-0.1.8-py3-none-any.whl
+sudo /opt/updatefivem/venv/bin/pip install ./updatefivem-0.1.9-py3-none-any.whl
 sudo ln -sf /opt/updatefivem/venv/bin/updatefivem /usr/local/bin/updatefivem
 ```
 
@@ -217,6 +218,12 @@ Check what artifact will be installed:
 
 ```bash
 updatefivem --check
+```
+
+By default, `updatefivem` also checks GitHub for a newer CLI release before running. If one exists, it prints the release and the `updatefivem self-update` command. Skip that advisory check with:
+
+```bash
+updatefivem --no-update-check
 ```
 
 Install/update artifacts:

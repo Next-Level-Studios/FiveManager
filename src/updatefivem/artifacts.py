@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -83,7 +83,12 @@ def select_blue_recommended(artifacts: list[Artifact]) -> Artifact:
 def resolve_artifact(value: str | None, artifacts: list[Artifact]) -> Artifact:
     if not value:
         return select_blue_recommended(artifacts)
-    if value.startswith("http://") or value.startswith("https://"):
+    if value.startswith("http://"):
+        raise RuntimeError("Artifact URLs must use HTTPS")
+    if value.startswith("https://"):
+        parsed = urlparse(value)
+        if not parsed.path.endswith(".tar.xz"):
+            raise RuntimeError("Artifact URL must point to a .tar.xz file")
         return Artifact(build=_build_from_url(value), url=value, recommended=False)
     for artifact in artifacts:
         if artifact.build == value:

@@ -69,3 +69,15 @@ def test_extract_rejects_path_traversal(tmp_path):
     make_tar(archive, {"../evil": b"bad"})
     with pytest.raises(RuntimeError, match="unsafe"):
         extract_artifact(archive, tmp_path / "work")
+
+
+def test_extract_rejects_symlink_escaping_extract_root(tmp_path):
+    archive = tmp_path / "evil-link.tar.xz"
+    with tarfile.open(archive, "w:xz") as tar:
+        info = tarfile.TarInfo("alpine/evil-link")
+        info.type = tarfile.SYMTYPE
+        info.linkname = "../../outside"
+        tar.addfile(info)
+
+    with pytest.raises(RuntimeError, match="unsafe"):
+        extract_artifact(archive, tmp_path / "work")

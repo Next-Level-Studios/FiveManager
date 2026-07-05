@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import shutil
 import tarfile
-import time
+import tempfile
 from pathlib import Path
 
 
@@ -15,14 +15,24 @@ def _safe_member_path(root: Path, member_name: str) -> Path:
     return target
 
 
+def _validate_tar_member(root: Path, member: tarfile.TarInfo) -> None:
+    _safe_member_path(root, member.name)
+    if member.issym() or member.islnk():
+        # Tar links are resolved relative to the link's containing directory.
+        # Reject absolute or escaping targets before extraction so an archive
+        # cannot plant links pointing outside the temporary work directory.
+        link_target = Path(member.linkname)
+        if link_target.is_absolute():
+            raise RuntimeError(f"Refusing to extract unsafe tar link: {member.name} -> {member.linkname}")
+        _safe_member_path((root / member.name).parent, member.linkname)
+
+
 def extract_artifact(archive_path: Path, work_dir: Path) -> Path:
-    extract_root = work_dir / f"extract-{int(time.time())}"
-    if extract_root.exists():
-        shutil.rmtree(extract_root)
-    extract_root.mkdir(parents=True)
+    work_dir.mkdir(parents=True, exist_ok=True)
+    extract_root = Path(tempfile.mkdtemp(prefix="extract-", dir=work_dir))
     with tarfile.open(archive_path, "r:xz") as tar:
         for member in tar.getmembers():
-            _safe_member_path(extract_root, member.name)
+            _validate_tar_member(extract_root, member)
         tar.extractall(extract_root, filter="fully_trusted")
     for root, dirs, _files in os.walk(extract_root):
         root_path = Path(root)
