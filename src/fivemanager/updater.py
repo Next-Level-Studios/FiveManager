@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 import requests
 
-GITHUB_LATEST_RELEASE_API = "https://api.github.com/repos/Next-Level-Studios/fivemanager/releases/latest"
+GITHUB_LATEST_RELEASE_API = "https://api.github.com/repos/Next-Level-Studios/FiveManager/releases/latest"
 
 
 @dataclass(frozen=True)
@@ -58,7 +58,7 @@ def check_for_newer_release(current_version: str, release: dict[str, Any]) -> Up
     if not latest or normalise_version(latest) <= normalise_version(current_version):
         return None
     asset = find_wheel_asset(release)
-    return UpdateInfo(current_version, latest, release.get("html_url") or "https://github.com/Next-Level-Studios/fivemanager/releases/latest", asset.get("name", "fivemanager.whl"), asset["browser_download_url"])
+    return UpdateInfo(current_version, latest, release.get("html_url") or "https://github.com/Next-Level-Studios/FiveManager/releases/latest", asset.get("name", "fivemanager.whl"), asset["browser_download_url"])
 
 
 def run_self_update(dry_run: bool = False) -> tuple[str, str, str, list[str]]:

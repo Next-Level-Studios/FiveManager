@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "fivemanager"
-version = "0.9.0"
+version = "0.9.1"
 description = "FiveManager: FiveM runtime updater and tmux-based multi-server manager"
 readme = "README.md"
 requires-python = ">=3.10"

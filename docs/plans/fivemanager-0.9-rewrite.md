@@ -9,7 +9,7 @@ Architecture: keep artifact download/extraction core, replace systemd-centric se
 Key tasks:
 1. Rename package metadata and CLI scripts to fivemanager, keep updatefivem alias.
 2. Add config model helpers for runtime mode, manager mode, stable server IDs, slug keys, port defaults/conflict checks.
-3. Add txAdmin config generation from /home/neo/config.json-compatible structure.
+3. Add txAdmin config generation from an embedded default template, with optional user override at ~/.config/fivemanager/txadmin-template.json.
 4. Add backup/restore with max 3 backups.
 5. Add tmux lifecycle and status memory helpers.
 6. Add wizard using InquirerPy with graceful fallback prompts.

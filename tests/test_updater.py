@@ -1,6 +1,6 @@
 import pytest
 
-from fivemanager.updater import check_for_newer_release, find_wheel_asset, normalise_version
+from fivemanager.updater import GITHUB_LATEST_RELEASE_API, check_for_newer_release, find_wheel_asset, normalise_version
 
 
 def test_find_wheel_asset_prefers_fivemanager_wheel():
@@ -31,3 +31,14 @@ def test_check_for_newer_release_detects_update():
 def test_check_for_newer_release_returns_none_when_current():
     release = {"tag_name": "v0.9.0", "assets": [{"name": "fivemanager-0.9.0-py3-none-any.whl", "browser_download_url": "https://example.test/fivemanager.whl"}]}
     assert check_for_newer_release("0.9.0", release) is None
+
+
+def test_github_update_api_uses_renamed_repo_casing():
+    assert GITHUB_LATEST_RELEASE_API == "https://api.github.com/repos/Next-Level-Studios/FiveManager/releases/latest"
+
+
+def test_release_url_fallback_uses_renamed_repo_casing():
+    release = {"tag_name": "v0.9.1", "assets": [{"name": "fivemanager-0.9.1-py3-none-any.whl", "browser_download_url": "https://example.test/fivemanager.whl"}]}
+    update = check_for_newer_release("0.9.0", release)
+    assert update is not None
+    assert update.release_url == "https://github.com/Next-Level-Studios/FiveManager/releases/latest"

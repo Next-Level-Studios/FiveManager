@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-TEMPLATE_PATH = Path("/home/neo/config.json")
+TEMPLATE_PATH = Path.home() / ".config" / "fivemanager" / "txadmin-template.json"
 DEFAULT_TEMPLATE = {
     "version": 2,
     "general": {"serverName": "servername"},
@@ -15,10 +15,14 @@ DEFAULT_TEMPLATE = {
 }
 
 
-def load_template(path: Path = TEMPLATE_PATH) -> dict[str, Any]:
-    if path.exists():
-        with path.open("r", encoding="utf-8") as fh:
-            return json.load(fh)
+def load_template(path: Path | None = None) -> dict[str, Any]:
+    template_path = path or TEMPLATE_PATH
+    try:
+        if template_path.exists():
+            with template_path.open("r", encoding="utf-8") as fh:
+                return json.load(fh)
+    except OSError:
+        return copy.deepcopy(DEFAULT_TEMPLATE)
     return copy.deepcopy(DEFAULT_TEMPLATE)
 
 

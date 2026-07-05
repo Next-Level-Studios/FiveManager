@@ -1,10 +1,11 @@
 import json
 import subprocess
 from pathlib import Path
+from typing import Any, cast
 
 from fivemanager.backup import create_backup, list_backups, restore_backup
 from fivemanager.tmux import start_server, stop_server
-from fivemanager.txadmin import build_txadmin_config, write_txadmin_profile
+from fivemanager.txadmin import build_txadmin_config, load_template, write_txadmin_profile
 
 
 def test_backup_prunes_to_three_and_restore_replaces_runtime(tmp_path):
@@ -45,6 +46,23 @@ def test_txadmin_config_generation_and_profile_creation(tmp_path):
     assert (profile / "logs").is_dir()
     written = json.loads((profile / "config.json").read_text())
     assert written["general"]["serverName"] == "Main RP Server"
+
+
+def test_txadmin_template_permission_error_falls_back_to_default(monkeypatch):
+    class ForbiddenPath:
+        def exists(self):
+            raise PermissionError("blocked")
+
+    cfg = load_template(cast(Any, ForbiddenPath()))
+
+    assert cfg["version"] == 2
+    assert cfg["general"]["serverName"] == "servername"
+
+
+def test_txadmin_default_template_path_uses_current_home():
+    import fivemanager.txadmin as txadmin
+
+    assert txadmin.TEMPLATE_PATH == Path.home() / ".config" / "fivemanager" / "txadmin-template.json"
 
 
 def test_start_server_builds_expected_tmux_command(monkeypatch, tmp_path):
