@@ -79,7 +79,7 @@ Download a release wheel from GitHub.
 For the 0.9 rewrite:
 
 ```bash
-wget https://github.com/Next-Level-Studios/FiveManager/releases/download/v0.9.7-alpha/fivemanager-0.9.7-py3-none-any.whl
+wget https://github.com/Next-Level-Studios/FiveManager/releases/download/v0.9.8-alpha/fivemanager-0.9.8-py3-none-any.whl
 ```
 
 Recommended system venv install:
@@ -87,7 +87,7 @@ Recommended system venv install:
 ```bash
 sudo mkdir -p /opt/fivemanager
 sudo python3 -m venv /opt/fivemanager/venv
-sudo /opt/fivemanager/venv/bin/pip install ./fivemanager-0.9.7-py3-none-any.whl
+sudo /opt/fivemanager/venv/bin/pip install ./fivemanager-0.9.8-py3-none-any.whl
 sudo ln -sf /opt/fivemanager/venv/bin/fivemanager /usr/local/bin/fivemanager
 sudo ln -sf /opt/fivemanager/venv/bin/updatefivem /usr/local/bin/updatefivem
 ```
@@ -148,11 +148,11 @@ FiveManager does not automatically migrate the old config in 0.9. This is delibe
 Install FiveManager into its own system venv:
 
 ```bash
-wget https://github.com/Next-Level-Studios/FiveManager/releases/download/v0.9.7-alpha/fivemanager-0.9.7-py3-none-any.whl
+wget https://github.com/Next-Level-Studios/FiveManager/releases/download/v0.9.8-alpha/fivemanager-0.9.8-py3-none-any.whl
 
 sudo mkdir -p /opt/fivemanager
 sudo python3 -m venv /opt/fivemanager/venv
-sudo /opt/fivemanager/venv/bin/pip install --upgrade ./fivemanager-0.9.7-py3-none-any.whl
+sudo /opt/fivemanager/venv/bin/pip install --upgrade ./fivemanager-0.9.8-py3-none-any.whl
 sudo ln -sf /opt/fivemanager/venv/bin/fivemanager /usr/local/bin/fivemanager
 sudo ln -sf /opt/fivemanager/venv/bin/updatefivem /usr/local/bin/updatefivem
 ```
@@ -242,8 +242,8 @@ Ctrl+B, then D
 For this 0.9 alpha, the safest update path is to download the wheel from the release page and install it into the existing venv:
 
 ```bash
-wget https://github.com/Next-Level-Studios/FiveManager/releases/download/v0.9.7-alpha/fivemanager-0.9.7-py3-none-any.whl
-sudo /opt/fivemanager/venv/bin/pip install --upgrade ./fivemanager-0.9.7-py3-none-any.whl
+wget https://github.com/Next-Level-Studios/FiveManager/releases/download/v0.9.8-alpha/fivemanager-0.9.8-py3-none-any.whl
+sudo /opt/fivemanager/venv/bin/pip install --upgrade ./fivemanager-0.9.8-py3-none-any.whl
 ```
 
 There is also a CLI helper:
@@ -471,11 +471,14 @@ txAdmin reads `<runtime>/txData/<server-key>/default/config.json`, then starts t
 
 ```bash
 fivemanager                         # setup wizard, or runtime update in runtime-only mode
+fivemanager --artifact 7290          # run setup/update with an explicit artifact build or URL
 fivemanager setup                   # run setup wizard again
 fivemanager update-runtime          # backup and update shared runtime
+fivemanager update-runtime --artifact 7290  # update runtime with an explicit artifact build or URL
 fivemanager restore                 # restore runtime backup
 
 fivemanager status                  # list configured servers
+fivemanager add                     # add another server to an existing full manager config
 fivemanager start 1                 # start server ID 1
 fivemanager stop 1                  # stop server ID 1
 fivemanager restart 1               # restart server ID 1
@@ -483,6 +486,8 @@ fivemanager console 1               # attach to server ID 1 tmux console
 fivemanager remove 1                # remove server ID 1 from config
 
 fivemanager self-update             # update FiveManager from latest release
+fivemanager self-update --dry-run   # show the update command without installing
+fivemanager self-update --prerelease # include alpha/beta releases
 ```
 
 Detach from console without stopping the server:

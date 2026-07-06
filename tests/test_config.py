@@ -27,6 +27,15 @@ def test_add_server_rejects_unsafe_internal_key():
         add_server(cfg, name="Bad", key="bad;rm -rf", data_path="/srv/bad", cfg_path="/srv/bad/server.cfg", txadmin_port=40120, fxserver_port=30120, interface="0.0.0.0")
 
 
+def test_add_server_rejects_duplicate_internal_key():
+    cfg = default_config()
+    cfg["runtime_dir"] = "/runtime"
+    add_server(cfg, name="Main", key="main", data_path="/srv/main", cfg_path="/srv/main/server.cfg", txadmin_port=40120, fxserver_port=30120, interface="0.0.0.0")
+
+    with pytest.raises(RuntimeError, match="internal server key main is already used by Main"):
+        add_server(cfg, name="Copy", key="main", data_path="/srv/copy", cfg_path="/srv/copy/server.cfg", txadmin_port=40121, fxserver_port=30121, interface="0.0.0.0")
+
+
 def test_stable_ids_reuse_lowest_free_id():
     cfg = default_config()
     cfg["runtime_dir"] = "/runtime"

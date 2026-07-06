@@ -29,6 +29,19 @@ def ask_text(message: str, default: str | None = None) -> str:
     return value or (default or "")
 
 
+def ask_port(message: str, default: int) -> int:
+    while True:
+        raw = ask_text(message, default=str(default))
+        try:
+            port = int(raw)
+        except ValueError:
+            warn("Port must be a number between 1 and 65535.")
+            continue
+        if 1 <= port <= 65535:
+            return port
+        warn("Port must be between 1 and 65535.")
+
+
 def ask_confirm(message: str, default: bool = True) -> bool:
     iq = _inquirer()
     if iq:
@@ -139,6 +152,36 @@ def prepare_server_paths(name: str, data_path: Path, cfg_path: Path) -> None:
             warn("Server config was not created. Create it before starting this server.")
 
 
+def add_server_interactively(config: dict, runtime: Path | None = None) -> dict:
+    runtime = runtime or Path(str(config["runtime_dir"])).expanduser()
+    while True:
+        txa, fxs = next_ports(config)
+        while True:
+            name = ask_text("Display name for this server")
+            if name:
+                break
+            warn("Display name cannot be blank.")
+        key = ask_text("Short internal server key (letters, numbers, hyphens, or underscores)", default=slugify(name))
+        data_path = ask_text("Server data folder - where this server's resources folder will live. For a new server, enter a new folder path")
+        cfg_path = ask_text("Server config file - full path to this server's server.cfg. If it does not exist, FiveManager can create a starter config")
+        prepare_server_paths(name, Path(data_path).expanduser(), Path(cfg_path).expanduser())
+        txa_port = ask_port("txAdmin web panel port - browser/admin UI port", default=txa)
+        fxs_port = ask_port("FXServer game port - player connection port", default=fxs)
+        if txa_port == fxs_port:
+            warn("txAdmin and FXServer ports must be different.")
+            continue
+        interface = ask_text("Network bind address - use 0.0.0.0 for all server IPs, or 127.0.0.1 for local-only testing", default="0.0.0.0")
+        try:
+            server = add_server(config, name=name, key=key, data_path=data_path, cfg_path=cfg_path, txadmin_port=txa_port, fxserver_port=fxs_port, interface=interface)
+        except RuntimeError as exc:
+            warn(str(exc))
+            continue
+        profile = write_txadmin_profile(runtime, server)
+        success(f"Created server {server['name']} with ID {server['id']}.")
+        success(f"Created txAdmin profile/config at {profile}. txAdmin will use this when the server starts.")
+        return server
+
+
 def run_setup_wizard(update_callback=None, start_callback=None) -> dict:
     console.print(Panel.fit("[bold cyan]FiveManager setup[/]\nFiveManager can download or update the FiveM server files, create txAdmin server profiles, and start or stop servers in background tmux sessions."))
     info("Runtime directory: the folder where the FiveM server artifact files live, including run.sh and alpine/.")
@@ -169,18 +212,7 @@ def run_setup_wizard(update_callback=None, start_callback=None) -> dict:
         return config
 
     while True:
-        txa, fxs = next_ports(config)
-        name = ask_text("Display name for this server")
-        key = ask_text("Short internal server key (letters, numbers, hyphens, or underscores)", default=slugify(name))
-        data_path = ask_text("Server data folder - where this server's resources folder will live. For a new server, enter a new folder path")
-        cfg_path = ask_text("Server config file - full path to this server's server.cfg. If it does not exist, FiveManager can create a starter config")
-        prepare_server_paths(name, Path(data_path).expanduser(), Path(cfg_path).expanduser())
-        txa_port = int(ask_text("txAdmin web panel port - browser/admin UI port", default=str(txa)))
-        fxs_port = int(ask_text("FXServer game port - player connection port", default=str(fxs)))
-        interface = ask_text("Network bind address - use 0.0.0.0 for all server IPs, or 127.0.0.1 for local-only testing", default="0.0.0.0")
-        server = add_server(config, name=name, key=key, data_path=data_path, cfg_path=cfg_path, txadmin_port=txa_port, fxserver_port=fxs_port, interface=interface)
-        profile = write_txadmin_profile(runtime, server)
-        success(f"Created txAdmin profile/config at {profile}. txAdmin will use this when the server starts.")
+        add_server_interactively(config, runtime)
         if ask_select("What next?", [("Add another server", "add"), ("Complete setup", "done")]) == "done":
             break
     save_config(config)

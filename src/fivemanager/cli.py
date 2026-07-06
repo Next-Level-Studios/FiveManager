@@ -10,14 +10,14 @@ from rich.table import Table
 from . import __version__
 from .artifacts import download_artifact, selected_artifact
 from .backup import create_backup, list_backups, restore_backup
-from .config import get_server, load_config, remove_server as remove_server_config, require_config, runtime_dir, save_config
+from .config import get_server, load_config, remove_server as remove_server_config, require_config, runtime_dir, save_config, validate_runtime_dir
 from .installer import install_archive
 from .paths import cache_dir
 from .tmux import attach_console, format_bytes, memory_bytes_for_session, restart_server, session_exists, session_name, start_server, stop_server
 from .txadmin import write_txadmin_profile
 from .ui import console, error, info, success, warn
 from .updater import run_self_update
-from .wizard import ask_confirm, ask_select, run_setup_wizard
+from .wizard import add_server_interactively, ask_confirm, ask_select, run_setup_wizard
 
 app = typer.Typer(help="FiveManager — FiveM runtime updater and tmux-based server manager.", no_args_is_help=False)
 
@@ -112,6 +112,36 @@ def start_server_by_id(config: dict, server_id: int) -> None:
     write_txadmin_profile(runtime_dir(config), server)
     name = start_server(runtime_dir(config), server)
     success(f"Started {server['name']} in tmux session {name}")
+
+
+@app.command("add")
+def add_command():
+    """Add another managed server to an existing full manager configuration."""
+    config = load_config()
+    if not config:
+        warn("FiveManager is not configured yet. Run fivemanager setup first.")
+        raise typer.Exit(1)
+    if config.get("mode") != "manager":
+        warn("fivemanager add requires full manager mode. Run fivemanager setup to configure full server management.")
+        raise typer.Exit(1)
+    runtime = runtime_dir(config)
+    info(f"Runtime directory: {runtime}")
+    runtime_errors = validate_runtime_dir(runtime)
+    if runtime_errors:
+        for runtime_error in runtime_errors:
+            warn(runtime_error)
+        info("You can still save the server now. Run fivemanager update-runtime before starting it.")
+    existing = sorted(config.get("servers", []), key=lambda s: int(s["id"]))
+    if existing:
+        info("Existing managed servers:")
+        for server in existing:
+            info(f"  {server['id']} | {server['name']} ({server['key']})")
+    server = add_server_interactively(config, runtime)
+    save_config(config)
+    if ask_confirm("Start this server now?", default=False):
+        start_server_by_id(config, int(server["id"]))
+    else:
+        info(f"Server saved. Start it later with: fivemanager start {server['id']}")
 
 
 @app.command("start")

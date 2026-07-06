@@ -119,6 +119,9 @@ def get_server(config: dict[str, Any], server_id: int) -> dict[str, Any]:
 def add_server(config: dict[str, Any], *, name: str, key: str, data_path: str, cfg_path: str, txadmin_port: int, fxserver_port: int, interface: str) -> dict[str, Any]:
     if not SAFE_KEY_RE.match(key):
         raise RuntimeError("internal server key may only contain letters, numbers, dot, underscore, and dash")
+    for server in config.get("servers", []):
+        if str(server.get("key", "")).lower() == key.lower():
+            raise RuntimeError(f"internal server key {key} is already used by {server['name']}")
     conflicts = port_conflicts(config, txadmin_port, fxserver_port)
     if conflicts:
         raise RuntimeError("; ".join(conflicts))
