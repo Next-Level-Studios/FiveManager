@@ -1,6 +1,8 @@
+import subprocess
+
 import pytest
 
-from fivemanager.updater import GITHUB_LATEST_RELEASE_API, check_for_newer_release, find_wheel_asset, latest_newer_release, normalise_version, run_self_update
+from fivemanager.updater import GITHUB_LATEST_RELEASE_API, UpdateInfo, check_for_newer_release, find_wheel_asset, install_update, latest_newer_release, normalise_version, run_self_update
 
 
 def test_find_wheel_asset_prefers_fivemanager_wheel():
@@ -63,3 +65,37 @@ def test_run_self_update_refuses_when_no_newer_release(monkeypatch):
     monkeypatch.setattr("fivemanager.updater.latest_newer_release", lambda *args, **kwargs: None)
     with pytest.raises(RuntimeError, match="No newer"):
         run_self_update(dry_run=True)
+
+
+def test_install_update_runs_pip_quietly_and_captures_output(monkeypatch):
+    calls = []
+    update = UpdateInfo("0.9.8", "v0.9.9-alpha", "https://example.test/release", "fivemanager-0.9.9-py3-none-any.whl", "https://example.test/fivemanager.whl")
+
+    def fake_run(cmd, **kwargs):
+        calls.append((cmd, kwargs))
+        return subprocess.CompletedProcess(cmd, 0, stdout="pip output", stderr="")
+
+    monkeypatch.setattr("fivemanager.updater.subprocess.run", fake_run)
+
+    cmd = install_update(update)
+
+    assert "--quiet" in cmd
+    assert "--disable-pip-version-check" in cmd
+    assert calls == [(cmd, {"check": True, "capture_output": True, "text": True})]
+
+
+def test_install_update_reports_captured_pip_output_on_failure(monkeypatch):
+    update = UpdateInfo("0.9.8", "v0.9.9-alpha", "https://example.test/release", "fivemanager-0.9.9-py3-none-any.whl", "https://example.test/fivemanager.whl")
+
+    def fake_run(cmd, **kwargs):
+        raise subprocess.CalledProcessError(1, cmd, output="stdout details", stderr="stderr details")
+
+    monkeypatch.setattr("fivemanager.updater.subprocess.run", fake_run)
+
+    with pytest.raises(RuntimeError) as exc:
+        install_update(update)
+
+    message = str(exc.value)
+    assert "pip install failed" in message
+    assert "stdout details" in message
+    assert "stderr details" in message

@@ -83,12 +83,35 @@ def latest_newer_release(current_version: str, include_prereleases: bool = False
     return best
 
 
+def install_update(update: UpdateInfo, dry_run: bool = False) -> list[str]:
+    cmd = [
+        sys.executable,
+        "-m",
+        "pip",
+        "install",
+        "--upgrade",
+        "--disable-pip-version-check",
+        "--quiet",
+        update.wheel_url,
+    ]
+    if dry_run:
+        return cmd
+    try:
+        subprocess.run(cmd, check=True, capture_output=True, text=True)
+    except subprocess.CalledProcessError as exc:
+        details = ["pip install failed."]
+        if exc.stdout:
+            details.append(f"stdout:\n{exc.stdout.strip()}")
+        if exc.stderr:
+            details.append(f"stderr:\n{exc.stderr.strip()}")
+        raise RuntimeError("\n".join(details)) from exc
+    return cmd
+
+
 def run_self_update(dry_run: bool = False, include_prereleases: bool = False) -> tuple[str, str, str, list[str]]:
     update = latest_newer_release(__version__, include_prereleases=include_prereleases)
     if update is None:
         channel = "release/prerelease" if include_prereleases else "stable release"
         raise RuntimeError(f"No newer {channel} found for FiveManager {__version__}.")
-    cmd = [sys.executable, "-m", "pip", "install", "--upgrade", update.wheel_url]
-    if not dry_run:
-        subprocess.run(cmd, check=True)
+    cmd = install_update(update, dry_run=dry_run)
     return update.latest_version, update.wheel_name, update.wheel_url, cmd

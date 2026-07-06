@@ -16,7 +16,7 @@ from .paths import cache_dir
 from .tmux import attach_console, format_bytes, memory_bytes_for_session, restart_server, session_exists, session_name, start_server, stop_server
 from .txadmin import write_txadmin_profile
 from .ui import console, error, info, success, warn
-from .updater import run_self_update
+from .updater import install_update, latest_newer_release
 from .wizard import add_server_interactively, ask_confirm, ask_select, run_setup_wizard
 
 app = typer.Typer(help="FiveManager — FiveM runtime updater and tmux-based server manager.", no_args_is_help=False)
@@ -219,18 +219,32 @@ def self_update(
     prerelease: bool = typer.Option(False, "--prerelease", help="Include prerelease alpha/beta builds."),
 ):
     try:
-        tag, name, url, cmd = run_self_update(dry_run=dry_run, include_prereleases=prerelease)
+        update = latest_newer_release(__version__, include_prereleases=prerelease)
+        if update is None:
+            channel = "release/prerelease" if prerelease else "stable release"
+            raise RuntimeError(f"No newer {channel} found for FiveManager {__version__}.")
+        cmd = install_update(update, dry_run=True)
     except RuntimeError as exc:
         warn(str(exc))
         if not prerelease:
             info("Use --prerelease to opt into alpha/beta builds, or install a specific release wheel manually.")
         raise typer.Exit(0)
-    info(f"Latest FiveManager release: {tag}")
-    info(f"Wheel: {name}")
+
+    console.print("[bold cyan]FiveManager self-update[/]")
+    info(f"Current version: {update.current_version}")
+    info(f"Target release: {update.latest_version}")
+    info(f"Wheel: {update.wheel_name}")
     if dry_run:
         console.print(" ".join(cmd))
-    else:
-        success(f"Updated FiveManager from {url}")
+        return
+
+    try:
+        with console.status("Installing update...", spinner="dots"):
+            install_update(update)
+    except RuntimeError as exc:
+        warn(str(exc))
+        raise typer.Exit(1)
+    success(f"Updated FiveManager to {update.latest_version}")
 
 
 def run():
